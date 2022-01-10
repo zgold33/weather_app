@@ -49,6 +49,19 @@ class MainViewController: UIViewController {
         return button
     }()
     
+    private let checkButton: UIButton = {
+        let button = UIButton(type: .system)
+        let image = UIImage(named: "menu-icon")
+        button.tintColor = .white
+        button.setImage(image, for: .normal)
+        button.layer.shadowOffset = CGSize(width: 5, height: 2)
+        button.layer.shadowRadius = 8.8
+        button.layer.shadowOpacity = 0.3
+        button.addTarget(self, action: #selector(checkButtonTapped), for: .touchUpInside)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        return button
+    }()
+    
     private let currentTemperatureLabel: UILabel = {
         let label = UILabel()
         label.textAlignment = .center
@@ -164,6 +177,7 @@ class MainViewController: UIViewController {
     var models = [DayWeather]()
     var modelsHourly = [HourlyWeather]()
     var current: CurrentWeather?
+    var cityNameMain = ""
     
     //MARK: - Life cycles
     
@@ -176,6 +190,7 @@ class MainViewController: UIViewController {
         setConstraints()
         
         config()
+//        getCityWeather(cityName: cityNameMain)
     }
     
     override func viewDidAppear(_ animated: Bool) {
@@ -220,6 +235,8 @@ class MainViewController: UIViewController {
         backgroundView.addSubview(hourlyForecastCollectionView)
         backgroundView.addSubview(tenDaysForecastLabel)
         backgroundView.addSubview(tenDaysForecastTableView)
+        
+        backgroundView.addSubview(checkButton)
     }
     
     private func tableViewDelegate() {
@@ -257,9 +274,33 @@ class MainViewController: UIViewController {
             locationManager.startUpdatingLocation()
         }
     }
+    
+    //MARK: - Read enterred city name from user defaults
+    
+    func readDefaults() {
+        let key = Constant.userKey
+        let defaults = UserDefaults.standard
+        if let userData = defaults.value(forKey: key) as? Data {
+            let decoder = JSONDecoder()
+            guard let city = try? decoder.decode(CityName.self, from: userData) else { return }
+            cityNameMain = city.name
+        }
+    }
+    
+    //MARK: - Buttons actions
+    
+    @objc private func menuButtonTapped() {
+        let chooseCityVC = ChooseCityViewController()
+        self.present(chooseCityVC, animated: true)
+    }
+    
+    @objc private func checkButtonTapped() {
+        readDefaults()
+        print(cityNameMain)
+    }
 }
 
-//MARK: - UITableView
+//MARK: - UITable	View
 
 extension MainViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -311,10 +352,10 @@ extension MainViewController: CLLocationManagerDelegate {
             currentLocation = locations.first
             locationManager.stopUpdatingLocation()
             guard let currentLocation = currentLocation else { return }
-            requestWeatherForLocation(long: currentLocation.coordinate.longitude,
-                                      lat: currentLocation.coordinate.latitude)
-            
-            getPlaceFrom(location: currentLocation) { cityName, error in }
+
+                requestWeatherForLocation(long: currentLocation.coordinate.longitude,
+                                          lat: currentLocation.coordinate.latitude)
+                getPlaceFrom(location: currentLocation) { cityName, error in }
         }
     }
     
@@ -322,30 +363,36 @@ extension MainViewController: CLLocationManagerDelegate {
         CLGeocoder().reverseGeocodeLocation(location) { [weak self] place, error in
             
             guard let self = self else { return }
-            if let _ = error {
-                //TODO: Show alert informing the user
-                return
-            }
-            
-            guard let placemark = place?.first else {
-                //TODO: Show alert informing the user
-                return
-            }
-            
+            if let _ = error { return }
+            guard let placemark = place?.first else { return }
             let cityName = placemark.locality
-            
+
             DispatchQueue.main.async {
                 self.currentCityLabel.text = cityName
             }
-            
+
             completion(place, error)
         }
     }
     
-    @objc private func menuButtonTapped() {
-        let chooseCityVC = ChooseCityViewController()
-        self.present(chooseCityVC, animated: true)
-    }
+//    func getCityWeather(cityName: String) {
+//
+//        getCoordinateFrom(city: cityName) { [self] coordinate, error in
+//            guard let coordinate = coordinate, error == nil else { return }
+//
+//            requestWeatherForLocation(long: coordinate.longitude, lat: coordinate.latitude)
+//
+//            DispatchQueue.main.async {
+//                self.currentCityLabel.text = cityName
+//            }
+//        }
+//    }
+//
+//    func getCoordinateFrom(city: String, completion: @escaping(_ coordinate: CLLocationCoordinate2D?, _ error: Error?) -> ()) {
+//        CLGeocoder().geocodeAddressString(city) { placemark, error in
+//            completion(placemark?.first?.location?.coordinate, error)
+//        }
+//    }
 }
 
 extension MainViewController {
@@ -390,6 +437,16 @@ extension MainViewController {
     }
 }
 
+
+
+
+
+
+
+
+
+
+
 //MARK: - SetConstraints
 
 extension MainViewController {
@@ -414,6 +471,12 @@ extension MainViewController {
         chooseCityButton.snp.makeConstraints { make in
             make.right.equalTo(backgroundView).inset(30)
             make.top.equalTo(backgroundView).inset(100)
+            make.height.width.equalTo(35)
+        }
+        
+        checkButton.snp.makeConstraints { make in
+            make.right.equalTo(backgroundView).inset(30)
+            make.top.equalTo(backgroundView).inset(200)
             make.height.width.equalTo(35)
         }
         

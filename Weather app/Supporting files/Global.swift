@@ -8,4 +8,4 @@
 import Foundation
 
 let apiKey = "8fbec5bc2a5ea5e5c995dfe936308e7e"
-var enteredCityName = ""
+//var enteredCityName = ""

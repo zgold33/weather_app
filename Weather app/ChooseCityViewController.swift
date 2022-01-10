@@ -7,6 +7,14 @@
 
 import UIKit
 import SnapKit
+//
+//struct Constant {
+//    static let userKey = "city.user.key"
+//}
+//
+//struct CityName: Codable {
+//    let name: String
+//}
 
 class ChooseCityViewController: UIViewController {
     
@@ -59,7 +67,7 @@ class ChooseCityViewController: UIViewController {
     
     //MARK: - Constants and variables
     
-//    var enteredCityName = ""
+    var enteredCityName = ""
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -82,8 +90,20 @@ class ChooseCityViewController: UIViewController {
         searchBar.delegate = self
     }
     
+    func writeToDefaults() {
+        let defaults = UserDefaults.standard
+        let key = Constant.userKey
+        let cityData = CityName(name: enteredCityName)
+        
+        let encoder = JSONEncoder()
+        if let data = try? encoder.encode(cityData) {
+            defaults.set(data, forKey: key)
+        }
+    }
+    
     @objc private func goHomeButtonTapped() {
         if enteredCityName != "" {
+            writeToDefaults()
             dismiss(animated: true, completion: nil)
         }
     }
@@ -97,7 +117,6 @@ extension ChooseCityViewController: UISearchBarDelegate {
         guard let searchBarText = searchBar.text else { return }
         enteredCityName = searchBarText
     }
-    
 }
 
 //MARK: - SetConstraints
